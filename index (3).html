@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Astra | AI premium Astrology</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
+  <meta name="referrer" content="no-referrer">
+
+  <style>
+    :root {
+      --primary-navy: #0f172a;
+      --primary-gold: #c29d59;
+      --bg-light: #f8fafc;
+      --card-bg: #ffffff;
+      --text-dark: #334155;
+      --text-light: #94a3b8;
+      --border-color: #e2e8f0;
+      --bot-msg-bg: #f1f5f9;
+      --user-msg-bg: #0f172a;
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      background-color: var(--primary-navy);
+      color: white;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+
+    h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; letter-spacing: 1px; color: var(--primary-gold); margin-bottom: 5px; }
+    .subtitle { font-size: 0.85rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      background: white;
+      width: 100%;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .nav-btn {
+      flex: 1;
+      max-width: 120px;
+      padding: 1rem 0.5rem;
+      background: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-light);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+    .nav-btn:hover { color: var(--primary-navy); }
+    .nav-btn.active { color: var(--primary-navy); border-bottom: 3px solid var(--primary-gold); }
+
+    .container { width: 100%; max-width: 600px; padding: 20px; flex: 1; }
+    .section { display: none; animation: fadeIn 0.4s ease-out; }
+    .section.active { display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border-color); margin-bottom: 20px; }
+    h2 { font-family: 'Playfair Display', serif; color: var(--primary-navy); margin-bottom: 1.5rem; font-size: 1.5rem; border-left: 4px solid var(--primary-gold); padding-left: 12px; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+    input[type="text"], input[type="date"], input[type="time"] {
+      width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; background-color: #f8fafc; color: var(--primary-navy);
+    }
+    input:focus { outline: none; border-color: var(--primary-navy); background-color: white; }
+
+    button.primary-btn {
+      width: 100%; padding: 14px; background-color: var(--primary-navy); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; margin-top: 10px;
+    }
+    button.primary-btn:hover { background-color: #1e293b; }
+
+    .chat-layout { height: 600px; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+    .chat-header { padding: 15px 20px; background-color: #f8fafc; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+    .gemini-title { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.95rem; }
+    .gemini-icon { font-size: 1.2rem; background: linear-gradient(135deg, #1e293b, #3b82f6); -webkit-background-cli: text; -webkit-text-fill-color: transparent; }
+
+    .status-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase; background: #dcfce7; color: #166534; }
+
+    .chat-history { flex: 1; padding: 20px; overflow-y: auto; background-color: #fff; display: flex; flex-direction: column; gap: 15px; }
+    .message { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; position: relative; }
+    .bot-msg { align-self: flex-start; background-color: var(--bot-msg-bg); color: var(--text-dark); border-bottom-left-radius: 2px; }
+    .user-msg { align-self: flex-end; background-color: var(--user-msg-bg); color: white; border-bottom-right-radius: 2px; }
+    .message strong { color: var(--primary-navy); font-weight: 700; }
+
+    .typing-indicator { font-size: 0.8rem; color: var(--text-light); margin-left: 20px; margin-bottom: 10px; display: none; font-style: italic; }
+
+    .chat-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; background: white; }
+    .chat-input-area input { flex: 1; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+    .send-btn { background: var(--primary-navy); color: white; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-size: 1.2rem; }
+    .send-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    .zodiac-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .zodiac-item { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .zodiac-item:hover { border-color: var(--primary-gold); background-color: #fffcf5; transform: translateY(-2px); }
+    .zodiac-icon { font-size: 1.5rem; margin-bottom: 5px; }
+    .zodiac-name { font-size: 0.8rem; font-weight: 500; color: var(--text-dark); }
+
+    .chart-wrapper { width: 100%; max-width: 350px; margin: 0 auto; }
+    .chart-border { fill: none; stroke: var(--primary-navy); stroke-width: 2; }
+    .chart-inner-lines { fill: none; stroke: var(--primary-navy); stroke-width: 1; }
+    .txt-sign { fill: var(--text-light); font-size: 10px; text-anchor: middle; font-family: 'Inter', sans-serif; }
+    .txt-planet { fill: var(--primary-navy); font-size: 12px; font-weight: 700; text-anchor: middle; dominant-baseline: middle; font-family: 'Inter', sans-serif; }
+
+    .result-box { background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin-top: 20px; display: none; border-left: 4px solid var(--primary-navy); }
+    .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 4px; height: 8px; margin: 15px 0; overflow: hidden; }
+    .progress-bar { height: 100%; background-color: var(--primary-gold); width: 0%; transition: width 1s ease-out; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ASTRA</h1>
+    <div class="subtitle">AI premium Vedic Astrology</div>
+  </header>
+
+  <nav>
+    <button class="nav-btn active" onclick="switchTab('horoscope')">Horoscope</button>
+    <button class="nav-btn" onclick="switchTab('kundali')">Kundali</button>
+    <button class="nav-btn" onclick="switchTab('match')">Match</button>
+    <button class="nav-btn" onclick="switchTab('ai-guide')">AI Guide</button>
+  </nav>
+
+  <div class="container">
+    <div id="horoscope" class="section active">
+      <div class="card">
+        <h2>Daily Forecast</h2>
+        <div class="zodiac-grid">
+          <div class="zodiac-item" onclick="showHoroscope('Aries')"><span class="zodiac-icon">♈</span><span class="zodiac-name">Aries</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Taurus')"><span class="zodiac-icon">♉</span><span class="zodiac-name">Taurus</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Gemini')"><span class="zodiac-icon">♊</span><span class="zodiac-name">Gemini</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Cancer')"><span class="zodiac-icon">♋</span><span class="zodiac-name">Cancer</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Leo')"><span class="zodiac-icon">♌</span><span class="zodiac-name">Leo</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Virgo')"><span class="zodiac-icon">♍</span><span class="zodiac-name">Virgo</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Libra')"><span class="zodiac-icon">♎</span><span class="zodiac-name">Libra</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Scorpio')"><span class="zodiac-icon">♏</span><span class="zodiac-name">Scorpio</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Sagittarius')"><span class="zodiac-icon">♐</span><span class="zodiac-name">Sagittarius</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Capricorn')"><span class="zodiac-icon">♑</span><span class="zodiac-name">Capricorn</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Aquarius')"><span class="zodiac-icon">♒</span><span class="zodiac-name">Aquarius</span></div>
+          <div class="zodiac-item" onclick="showHoroscope('Pisces')"><span class="zodiac-icon">♓</span><span class="zodiac-name">Pisces</span></div>
+        </div>
+        <div id="horoscope-result" class="result-box">
+          <div class="result-title" style="color: var(--primary-navy); font-weight:700;" id="horoscope-sign-title"></div>
+          <p id="horoscope-text" style="line-height: 1.6; color: var(--text-dark);"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="kundali" class="section">
+      <div class="card">
+        <h2>Natal Chart</h2>
+        <div class="form-group"><label>Name</label><input type="text" id="natal-name" placeholder="Enter Name"></div>
+        <div class="form-group"><label>Date of Birth</label><input type="date" id="natal-date"></div>
+        <div class="form-group"><label>Time of Birth</label><input type="time" id="natal-time"></div>
+        <button class="primary-btn" onclick="generateChart()">Generate Kundali</button>
+      </div>
+
+      <div id="chart-display-area" class="card" style="display:none;">
+        <h3 style="text-align: center; color: var(--primary-navy);" id="chart-heading"></h3>
+        <p id="chart-subheading" style="text-align:center; font-size:0.9rem; color: var(--text-light); margin-bottom: 20px;"></p>
+        <div class="chart-wrapper">
+          <svg viewBox="0 0 300 300" class="kundali-chart" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="296" height="296" class="chart-border" />
+            <line x1="0" y1="0" x2="300" y2="300" class="chart-inner-lines" />
+            <line x1="0" y1="300" x2="300" y2="0" class="chart-inner-lines" />
+            <polygon points="150,0 300,150 150,300 0,150" class="chart-inner-lines" />
+            <g id="chart-data"></g>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div id="match" class="section">
+      <div class="card">
+        <h2>Matchmaking</h2>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;"><div class="form-group"><label>Person A</label><input type="text" id="name-1" placeholder="Name"></div></div>
+          <div style="flex: 1; min-width: 200px;"><div class="form-group"><label>Person B</label><input type="text" id="name-2" placeholder="Name"></div></div>
+        </div>
+        <button class="primary-btn" onclick="calculateMatch()">Check Compatibility</button>
+        <div id="match-result" class="result-box">
+          <div class="result-title" style="color:var(--primary-navy); font-weight:700;" id="match-score"></div>
+          <div class="progress-container"><div class="progress-bar" id="match-bar"></div></div>
+          <p id="match-desc" style="font-size: 0.95rem; color: var(--text-dark);"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="ai-guide" class="section">
+      <div class="card chat-layout">
+        <div class="chat-header">
+          <div class="gemini-title"><span class="gemini-icon">✦</span><span>Llama 3.1 Astrologer</span></div>
+          <span class="status-badge">Live</span>
+        </div>
+        <div class="chat-history" id="chat-history">
+          <div class="message bot-msg">
+            Namaste! I am your AI Vedic Astrologer powered by Llama 3.1. <br>
+            Ask me about your Dasha, Transits, Career, or Relationships.
+          </div>
+        </div>
+        <div class="typing-indicator" id="typing-indicator">Consulting the stars...</div>
+        <div class="chat-input-area">
+          <input type="text" id="user-input" placeholder="Ask a question..." onkeypress="handleEnter(event)">
+          <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+      const tabs = ['horoscope', 'kundali', 'match', 'ai-guide'];
+      const tabIndex = tabs.indexOf(tabId);
+      if(tabIndex >= 0) {
+        document.querySelectorAll('.nav-btn')[tabIndex].classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+      }
+    }
+
+    // Horoscope
+    const horoscopeData = [
+      "Today favors strategic planning. Review your financial portfolio.",
+      "A collaborative opportunity arises at work. Embrace the team dynamic.",
+      "Your intuition is heightened. Trust your gut in negotiations."
+    ];
+    function showHoroscope(sign) {
+      document.getElementById('horoscope-result').style.display = 'block';
+      document.getElementById('horoscope-sign-title').innerText = `${sign} Forecast`;
+      document.getElementById('horoscope-text').innerText = horoscopeData[Math.floor(Math.random() * horoscopeData.length)];
+    }
+
+    // Kundali
+    function generateChart() {
+      const name = document.getElementById('natal-name').value;
+      const dob = document.getElementById('natal-date').value;
+      const tob = document.getElementById('natal-time').value;
+      if(!name || !dob || !tob) { alert("Please fill in Name, Date, and Time."); return; }
+
+      document.getElementById('chart-display-area').style.display = 'block';
+      document.getElementById('chart-heading').innerText = `Kundali: ${name}`;
+      document.getElementById('chart-subheading').innerText = `DOB: ${dob} | Time: ${tob}`;
+      const svgGroup = document.getElementById('chart-data');
+      svgGroup.innerHTML = '';
+
+      const coords = [
+        { sx: 150, sy: 65,  px: 150, py: 95 }, { sx: 75,  sy: 25,  px: 55,  py: 50 },
+        { sx: 25,  sy: 75,  px: 40,  py: 110 }, { sx: 75,  sy: 150, px: 95,  py: 150 },
+        { sx: 25,  sy: 225, px: 45,  py: 200 }, { sx: 75,  sy: 275, px: 65,  py: 255 },
+        { sx: 150, sy: 235, px: 150, py: 210 }, { sx: 225, sy: 275, px: 235, py: 255 },
+        { sx: 275, sy: 225, px: 255, py: 200 }, { sx: 225, sy: 150, px: 205, py: 150 },
+        { sx: 275, sy: 75,  px: 255, py: 110 }, { sx: 225, sy: 25,  px: 245, py: 50 }
+      ];
+      const ascendant = Math.floor(Math.random() * 12) + 1;
+      const planets = ["Sun", "Moon", "Mars", "Mer", "Jup", "Ven", "Sat", "Rah", "Ket"];
+      let houseIndices = [0,1,2,3,4,5,6,7,8,9,10,11].sort(() => Math.random() - 0.5);
+      let finalAllocation = new Array(12).fill(null);
+      planets.forEach((p, i) => finalAllocation[houseIndices[i]] = p);
+
+      coords.forEach((pos, index) => {
+        let signNum = (ascendant + index - 1) % 12 + 1;
+        let signTxt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        signTxt.setAttribute("x", pos.sx); signTxt.setAttribute("y", pos.sy);
+        signTxt.setAttribute("class", "txt-sign"); signTxt.textContent = signNum;
+        svgGroup.appendChild(signTxt);
+
+        if (finalAllocation[index]) {
+          let planetTxt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          planetTxt.setAttribute("x", pos.px); planetTxt.setAttribute("y", pos.py);
+          planetTxt.setAttribute("class", "txt-planet"); planetTxt.textContent = finalAllocation[index];
+          svgGroup.appendChild(planetTxt);
+        }
+      });
+    }
+
+    // Matching
+    function calculateMatch() {
+      const n1 = document.getElementById('name-1').value;
+      const n2 = document.getElementById('name-2').value;
+      if(!n1 || !n2) { alert("Please enter both names."); return; }
+      const resDiv = document.getElementById('match-result');
+      resDiv.style.display = 'block';
+      const score = Math.floor(Math.random() * 40) + 60;
+      document.getElementById('match-score').innerText = `Compatibility: ${score}%`;
+      const bar = document.getElementById('match-bar');
+      bar.style.width = '0%';
+      setTimeout(() => { bar.style.width = score + '%'; }, 100);
+      let msg = score > 85 ? "Divine Union." : (score > 70 ? "Good Match." : "Average Match.");
+      document.getElementById('match-desc').innerText = msg;
+    }
+
+    function escapeHtml(unsafe) {
+      return unsafe
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function handleEnter(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    // Chat logic
+    async function sendMessage() {
+      const inputField = document.getElementById('user-input');
+      const message = inputField.value.trim();
+      if (!message) return;
+
+      addMessage(message, 'user-msg');
+      inputField.value = '';
+
+      const typing = document.getElementById('typing-indicator');
+      const sendBtn = document.getElementById('send-btn');
+      typing.style.display = 'block';
+      sendBtn.disabled = true;
+
+      try {
+        const responseText = await callAIAPI(message);
+        typing.style.display = 'none';
+        sendBtn.disabled = false;
+        addMessage(responseText, 'bot-msg');
+      } catch (error) {
+        typing.style.display = 'none';
+        sendBtn.disabled = false;
+        addMessage("<strong>Connection Error:</strong> " + escapeHtml(error.message || 'Unknown error'), 'bot-msg');
+      }
+    }
+
+    function addMessage(text, className) {
+      const history = document.getElementById('chat-history');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${className}`;
+
+      if (className === 'bot-msg' && typeof marked !== 'undefined') {
+        const rawHtml = marked.parse(text);
+        msgDiv.innerHTML = DOMPurify.sanitize(rawHtml);
+      } else {
+        msgDiv.innerHTML = escapeHtml(text);
+      }
+
+      history.appendChild(msgDiv);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    async function callAIAPI(prompt) {
+     // Render URL yahan daal sakte hain
+const res = await fetch('https://astra.onrender.com/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error(txt || `Server error ${res.status}`);
+      }
+
+      const data = await res.json().catch(() => ({}));
+      return data.text || 'The stars are silent right now.';
+    }
+  </script>
+</body>
+</html>
