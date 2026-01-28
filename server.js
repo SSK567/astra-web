@@ -4,7 +4,7 @@ const OpenAI = require("openai");
 const cors = require('cors');
 const admin = require("firebase-admin");
 
-const app = express(); // ✅ Ye line zaroori hai, iske bina error aayega
+const app = express(); 
 const port = process.env.PORT || 3000;
 
 // Middleware
@@ -51,7 +51,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- API ROUTE (WITH LOGS) ---
 app.post('/api/generate', async (req, res) => {
     try {
         console.log("📨 Request received...");
@@ -100,4 +99,5 @@ app.post('/api/generate', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
 
